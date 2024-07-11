@@ -376,6 +376,11 @@ h1.title span {
   text-align: center;
 }
 
+#controls .library {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
 .btn-group-toggle input {
   position: absolute;
   clip: rect(0, 0, 0, 0);

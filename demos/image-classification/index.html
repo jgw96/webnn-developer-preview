@@ -114,6 +114,14 @@
                             EfficientNet Lite4
                         </label>
                     </div>
+                    <div class="btn-group-toggle library" data-toggle="buttons", id="libraryBtns">
+                        <label class="btn" name="transformers.js" id="label_transformers.js">
+                            <input type="radio" name="library" id="transformers.js">Transformers.js
+                        </label>
+                        <label class="btn" name="transformers.js" id="label_onnxruntime.js">
+                            <input type="radio" name="library" id="onnxruntime.js">onnxruntime.js
+                        </label>
+                    </div>
                     <div class="range">
                         <input id="range" type="range" min="0" max="1000" step="10" value="1">
                         <div class="rangeshow"><span class="rangevalue">1</span> <span id="run-span">run</span></div>

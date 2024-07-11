@@ -25,19 +25,22 @@ transformers.env.backends.onnx.wasm.simd = true;
 transformers.env.backends.onnx.wasm.numThreads = 1;
 
 let provider = "webnn";
+let library = "tensorflow.js";
 let deviceType = "gpu";
 let dataType = "fp16";
 let modelId = "resnet-50";
 let modelPath = "Xenova/resnet-50";
 let runs = 1;
 let range, rangeValue, runSpan;
-let backendLabels, modelLabels;
+let backendLabels, modelLabels, libraryLabels;
 let label_webgpu,
   label_webnn_gpu,
   label_webnn_npu,
   label_mobilenetV2,
   label_resnet50,
-  label_efficientnetLite4;
+  label_efficientnetLite4,
+  label_transformersjs,
+  label_onnxruntime;
 let uploadImage, label_uploadImage;
 let imageUrl, image;
 let classify;
@@ -268,6 +271,21 @@ const initModelSelector = () => {
       label_efficientnetLite4.setAttribute("class", "btn active");
     }
   }
+
+  if (getQueryValue("library")) {
+    libraryLabels.forEach((label) => {
+      label.setAttribute("class", "btn");
+    });
+
+    if (getQueryValue("library").toLowerCase() === "transformers.js") {
+      label_transformersjs.setAttribute("class", "btn active");
+      label_onnxruntime.setAttribute("class", "btn");
+    } else if (getQueryValue("library").toLowerCase() === "onnxruntime.js") {
+      label_transformersjs.setAttribute("class", "btn");
+      label_onnxruntime.setAttribute("class", "btn active");
+    }
+  
+  }
 };
 
 const controls = async () => {
@@ -288,6 +306,7 @@ const controls = async () => {
 
   let backendBtns = document.querySelector("#backendBtns");
   let modelBtns = document.querySelector("#modelBtns");
+  let libraryBtns = document.querySelector("#libraryBtns");
 
   const updateBackend = (e) => {
     backendLabels.forEach((label) => {
@@ -374,8 +393,36 @@ const controls = async () => {
     updateUi();
   };
 
+  const updateLibrary = (e) => {
+    libraryLabels.forEach((label) => {
+      label.setAttribute("class", "btn");
+    });
+    e.target.parentNode.setAttribute("class", "btn active");
+    if (e.target.id.trim() === "transformers.js") {
+      let currentUrl = window.location.href;
+      let updatedUrl = updateQueryStringParameter(
+        currentUrl,
+        "library",
+        "transformers.js"
+      );
+      window.history.pushState({}, "", updatedUrl);
+      library = "transformers.js";
+    } else if (e.target.id.trim() === "onnxruntime.js") {
+      let currentUrl = window.location.href;
+      let updatedUrl = updateQueryStringParameter(
+        currentUrl,
+        "library",
+        "onnxruntime.js"
+      );
+      window.history.pushState({}, "", updatedUrl);
+      library = "onnxruntime.js";
+    }
+    updateUi();
+  }
+
   backendBtns.addEventListener("change", updateBackend, false);
   modelBtns.addEventListener("change", updateModel, false);
+  libraryBtns.addEventListener("change", updateLibrary, false);
 };
 
 const badgeUpdate = () => {
@@ -501,12 +548,15 @@ const ui = async () => {
   runSpan = document.querySelector("#run-span");
   backendLabels = document.querySelectorAll(".backends label");
   modelLabels = document.querySelectorAll(".models label");
+  libraryLabels = document.querySelectorAll(".libraries label");
   label_webgpu = document.querySelector("#label_webgpu");
   label_webnn_gpu = document.querySelector("#label_webnn_gpu");
   label_webnn_npu = document.querySelector("#label_webnn_npu");
   label_mobilenetV2 = document.querySelector("#label_mobilenet-v2");
   label_resnet50 = document.querySelector("#label_resnet-50");
   label_efficientnetLite4 = document.querySelector("#label_efficientnet-lite4");
+  label_transformersjs = document.querySelector("#label_transformers\\.js");
+  label_onnxruntime = document.querySelector("#label_onnxruntime\\.js");
   image = document.querySelector("#image");
   uploadImage = document.querySelector("#upload-image");
   label_uploadImage = document.querySelector("#label_upload-image");
