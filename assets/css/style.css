@@ -76,6 +76,11 @@ body {
   align-self: center;
 }
 
+.banner-content a {
+  text-decoration: underline;
+  color: var(--highlight);
+}
+
 #banner h1 {
   font-size: max(48px, min(5vw, 68px));
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.15);
