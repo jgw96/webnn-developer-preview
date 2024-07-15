@@ -55,6 +55,8 @@ let dataTypeSpan;
 let modelIdSpan;
 let latency, latencyDiv;
 
+let webnn_button;
+
 const main = async () => {
   // Xenova/resnet-50
   // webnn/mobilenet-v2
@@ -306,9 +308,17 @@ const initModelSelector = () => {
     if (getQueryValue("library").toLowerCase() === "transformers.js") {
       label_transformersjs.setAttribute("class", "btn active");
       label_onnxruntime.setAttribute("class", "btn");
+
+      label_webnn_npu.setAttribute("class", "btn disabled");
+      webnn_button.disabled = true;
+      document.querySelector("#npu-warning").setAttribute("class", "hidden");
     } else if (getQueryValue("library").toLowerCase() === "onnxruntime.js") {
       label_transformersjs.setAttribute("class", "btn");
       label_onnxruntime.setAttribute("class", "btn active");
+
+      label_webnn_npu.setAttribute("class", "btn");
+      webnn_button.disabled = false;
+      document.querySelector("#npu-warning").setAttribute("class", "visible");
     }
   
   }
@@ -333,6 +343,8 @@ const controls = async () => {
   let backendBtns = document.querySelector("#backendBtns");
   let modelBtns = document.querySelector("#modelBtns");
   let libraryBtns = document.querySelector("#libraryBtns");
+
+  webnn_button = document.querySelector("#webnn_npu");
 
   const updateBackend = (e) => {
     backendLabels.forEach((label) => {

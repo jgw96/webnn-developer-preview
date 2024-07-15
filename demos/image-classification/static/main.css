@@ -543,6 +543,23 @@ input[type="range"]::-webkit-slider-thumb:active {
   fill: var(--border);
 }
 
+label.disabled {
+  --active: 0;
+  cursor: not-allowed;
+  color: var(--border);
+  background-color: var(--disabled);
+  background: var(--disabled);
+  border: 1px solid var(--border);
+  text-shadow: none;
+}
+
+label.disabled:hover {
+  background: var(--disabled);
+  border: 1px solid var(--border);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
 h1,
 h4 {
   text-align: center;
@@ -848,6 +865,18 @@ h4 {
 
 #webnnstatus #circle.none {
   display: none;
+}
+
+.hidden {
+  display: none;
+}
+
+#npu-warning {
+  max-width: 42vw;
+  font-size: 0.9rem;
+  border: 1px solid var(--border);
+  padding: 10px 10px;
+  border-radius: 5px;
 }
 
 .grid-1 {
