@@ -126,54 +126,80 @@ const main = async () => {
   modelIdSpan.innerHTML = dataType;
   dataTypeSpan.innerHTML = modelPath;
 
-  try {
-    log("[ONNX Runtime] Options: " + JSON.stringify(options));
-    log(
-      `[Transformer.js] Loading ${modelPath} and running image-classification pipeline`
-    );
-    const classifier = await transformers.pipeline(
-      "image-classification",
-      modelPath,
-      options
-    );
-    let [err, output] = await asyncErrorHandling(
-      classifier(imageUrl, { topk: 3 })
-    );
-    if (err) {
-      status.setAttribute("class", "red");
-      info.innerHTML = err.message;
-      logError(err.message);
-    } else {
-      if (getMode()) {
-        log(JSON.stringify(transformers.getPerf()));
-        let warmUp = transformers.getPerf().warmup;
-        let averageInference = getAverage(transformers.getPerf().inference);
-        let medianInference = getMedian(transformers.getPerf().inference);
-        latency.innerHTML = medianInference.toFixed(2);
-        first.innerHTML = warmUp.toFixed(2);
-        average.innerHTML = averageInference;
-        median.innerHTML = medianInference.toFixed(2);
-        best.innerHTML = getMinimum(transformers.getPerf().inference);
-        throughput.innerHTML = `${transformers.getPerf().throughput} FPS`;
-        fullResult.setAttribute("class", "");
-        latencyDiv.setAttribute("class", "latency");
-      }
+  if (getQueryValue("library")) {
+    library = getQueryValue("library");
 
-      label1.innerHTML = output[0].label;
-      score1.innerText = output[0].score;
-      label2.innerText = output[1].label;
-      score2.innerText = output[1].score;
-      label3.innerText = output[2].label;
-      score3.innerText = output[2].score;
-      result.setAttribute("class", "");
-      label_uploadImage.setAttribute("class", "");
-      uploadImage.disabled = false;
-      classify.disabled = false;
-      log(JSON.stringify(output));
-      log(`[Transformer.js] Classifier completed`);
+    if (library === "transformers.js") {
+      try {
+        log("[ONNX Runtime] Options: " + JSON.stringify(options));
+        log(
+          `[Transformer.js] Loading ${modelPath} and running image-classification pipeline`
+        );
+        const classifier = await transformers.pipeline(
+          "image-classification",
+          modelPath,
+          options
+        );
+        let [err, output] = await asyncErrorHandling(
+          classifier(imageUrl, { topk: 3 })
+        );
+        if (err) {
+          status.setAttribute("class", "red");
+          info.innerHTML = err.message;
+          logError(err.message);
+        } else {
+          if (getMode()) {
+            log(JSON.stringify(transformers.getPerf()));
+            let warmUp = transformers.getPerf().warmup;
+            let averageInference = getAverage(transformers.getPerf().inference);
+            let medianInference = getMedian(transformers.getPerf().inference);
+            latency.innerHTML = medianInference.toFixed(2);
+            first.innerHTML = warmUp.toFixed(2);
+            average.innerHTML = averageInference;
+            median.innerHTML = medianInference.toFixed(2);
+            best.innerHTML = getMinimum(transformers.getPerf().inference);
+            throughput.innerHTML = `${transformers.getPerf().throughput} FPS`;
+            fullResult.setAttribute("class", "");
+            latencyDiv.setAttribute("class", "latency");
+          }
+    
+          label1.innerHTML = output[0].label;
+          score1.innerText = output[0].score;
+          label2.innerText = output[1].label;
+          score2.innerText = output[1].score;
+          label3.innerText = output[2].label;
+          score3.innerText = output[2].score;
+          result.setAttribute("class", "");
+          label_uploadImage.setAttribute("class", "");
+          uploadImage.disabled = false;
+          classify.disabled = false;
+          log(JSON.stringify(output));
+          log(`[Transformer.js] Classifier completed`);
+        }
+      } catch (err) {
+        log(`[Error] ${err}`);
+      }
     }
-  } catch (err) {
-    log(`[Error] ${err}`);
+    else {
+      console.log("not using transformers")
+      try {
+        log("[ONNX Runtime] Options: " + JSON.stringify(options));
+
+        console.log("modelPath: ", modelPath);
+
+        // https://huggingface.co/webnn/mobilenet-v2/blob/main/onnx/model_fp16.onnx
+        // https://huggingface.co/webnn/mobilenet-v2/resolve/main/onnx/model_fp16.onnx
+
+        // load model
+        const response = await fetch("https://huggingface.co/" + modelPath + "/resolve/main/onnx/model_fp16.onnx");
+        const buffer = await response.arrayBuffer();
+        await ort.InferenceSession.create(buffer, {executionProviders: ['webgl']});
+
+      }
+      catch (err) {
+        log(`[Error] ${err}`);
+      }
+    }
   }
 };
 
