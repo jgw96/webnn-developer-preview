@@ -18,6 +18,7 @@ import {
   asyncErrorHandling,
   getMode,
 } from "../../assets/js/common_utils.js";
+import { imagenetClasses } from "../../Get Started/WebNN Tutorial/imagenetClasses.js";
 
 transformers.env.allowRemoteModels = true;
 transformers.env.backends.onnx.wasm.proxy = false;
@@ -164,7 +165,7 @@ const main = async () => {
             fullResult.setAttribute("class", "");
             latencyDiv.setAttribute("class", "latency");
           }
-    
+
           label1.innerHTML = output[0].label;
           score1.innerText = output[0].score;
           label2.innerText = output[1].label;
@@ -187,22 +188,88 @@ const main = async () => {
       try {
         log("[ONNX Runtime] Options: " + JSON.stringify(options));
 
-        console.log("modelPath: ", modelPath);
-
-        // https://huggingface.co/webnn/mobilenet-v2/blob/main/onnx/model_fp16.onnx
-        // https://huggingface.co/webnn/mobilenet-v2/resolve/main/onnx/model_fp16.onnx
-
         // load model
         const response = await fetch("https://huggingface.co/" + modelPath + "/resolve/main/onnx/model_fp16.onnx");
         const buffer = await response.arrayBuffer();
-        await ort.InferenceSession.create(buffer, {executionProviders: ['webgl']});
+        const session = await ort.InferenceSession.create(buffer, { executionProviders: ['webgpu'] });
 
+        const imageData = await loadImage(imageUrl);
+        const usefulTensor = await imageToTensor(imageData);
+
+        const feeds = {};
+        feeds.pixel_values = usefulTensor;
+        const outputData = await session.run(feeds);
+        console.log("outputData.logits.data", outputData.logits)
+
+        const probabilities = softmax(outputData.logits.cpuData);
+
+        const bestClassIdx = argmax(probabilities);
+        console.log("bestClassIdx", bestClassIdx);
+
+        const classLabels = imagenetClasses; // Replace with your actual class labels
+        const bestClassName = classLabels[bestClassIdx];
+        console.log(`Predicted class: ${bestClassName} (Probability: ${probabilities[bestClassIdx]})`);
+        
       }
       catch (err) {
         log(`[Error] ${err}`);
       }
     }
   }
+};
+
+const softmax = (logits) => {
+  console.log("logits", logits);
+  const max = Math.max(...logits);
+  const exps = logits.map(x => Math.exp(x - max));
+  const sumExps = exps.reduce((acc, val) => acc + val, 0);
+  return exps.map(x => x / sumExps);
+}
+
+// Example argmax function to find index of maximum value
+const argmax = (array) => {
+  return array.indexOf(Math.max(...array));
+}
+
+// Load the image data
+const loadImage = async (url) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous'; // Enable CORS if needed
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = url;
+  });
+};
+
+// Function to convert loaded image to tensor
+const imageToTensor = async (image) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 224;
+  canvas.height = 224;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(image, 0, 0, 224, 224);
+
+  document.body.appendChild(canvas);
+
+  // Get image data from the canvas
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const { data } = imageData;
+
+  // Normalize pixel values to [0, 1] and rearrange channels (assuming RGB image)
+  const inputTensor = new Float32Array(1 * 3 * 224 * 224);
+  let idx = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    inputTensor[idx++] = data[i] / 255;         // R
+    inputTensor[idx++] = data[i + 1] / 255;     // G
+    inputTensor[idx++] = data[i + 2] / 255;     // B
+  }
+
+  // Create ONNX Runtime Tensor with the correct shape and data
+  // const tensor = new ort.Tensor(inputTensor, 'float32', [1, 3, 224, 224]);
+  const tensor = await new ort.Tensor("float32", inputTensor, [1, 3, 224, 224]);
+
+  return tensor;
 };
 
 const checkWebNN = async () => {
@@ -320,7 +387,7 @@ const initModelSelector = () => {
       webnn_button.disabled = false;
       document.querySelector("#npu-warning").setAttribute("class", "visible");
     }
-  
+
   }
 };
 
